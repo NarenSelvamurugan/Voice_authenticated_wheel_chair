@@ -1,0 +1,171 @@
+// To store user voice command
+String text;
+
+// To store the total voltage of photoresistor
+int tot;
+
+// Pin declaration for ultrasonic sensors
+const int TRIG_PIN = 2;
+const int ECHO_PIN = 3;
+const int LED_PIN = 4;
+
+// Default distance threshold = 20;
+const int DISTANCE_THRESHOLD = 20;
+
+float duration_us, distance_cm;
+
+// Inside the setup() function, first we will configure all the control pins as output pins. This will be done by using the pinMode() function.
+// The pin will be passed as the first parameter and OUTPUT will be passed as the second parameter.
+void setup() {
+    pinMode(8, OUTPUT); // IN2
+    pinMode(9, OUTPUT); // IN1
+    pinMode(10, OUTPUT); // Enable Pin1
+    pinMode(11, OUTPUT); // IN3
+    pinMode(12, OUTPUT); // IN4
+    pinMode(13, OUTPUT); // Enable Pin2
+    pinMode(TRIG_PIN, OUTPUT);
+    pinMode(ECHO_PIN, INPUT);
+    pinMode(LED_PIN, OUTPUT);
+    pinMode(5, OUTPUT); // To turn on the buzzer
+
+    Serial.begin(9600); // To begin the serial communication. Default communication rate
+}
+
+void loop() {
+    tot = analogRead(A0); // Reads the value from the specified analog pin
+
+    if (tot < 100) {
+        digitalWrite(5, HIGH); // digitalWrite lets you output a voltage either 0 or 5V represented by zero or one inside the processor.
+    }
+
+    if (tot > 100) {
+        digitalWrite(5, LOW);
+    }
+
+    // Checks if the data is coming from the serial port
+    while (Serial.available()) {
+        delay(10); // Pauses the program for the amount of time (in milliseconds) specified as parameter.
+        char c = Serial.read(); // Read the data from the serial port
+        text += c;
+    }
+
+    digitalWrite(TRIG_PIN, HIGH); // To trigger the transmitter
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW); // Triggered for 10 microseconds
+
+    duration_us = pulseIn(ECHO_PIN, HIGH); // If value is HIGH, pulseIn() waits for the pin to go from LOW to HIGH, starts timing, then waits for the pin to go LOW and stops timing.
+    distance_cm = 0.017 * duration_us; // distance calculation
+
+    // When an obstacle is within the threshold distance motors are stopped.
+    if (distance_cm < DISTANCE_THRESHOLD) {
+        digitalWrite(LED_PIN, HIGH);
+        Serial.println("STOP");
+        digitalWrite(8, LOW);
+        digitalWrite(9, LOW);
+        digitalWrite(10, HIGH);
+        digitalWrite(11, LOW);
+        digitalWrite(12, LOW);
+        digitalWrite(13, HIGH);
+    }
+
+    if (distance_cm > DISTANCE_THRESHOLD) {
+        digitalWrite(LED_PIN, LOW);
+    }
+
+    // To store user voice command
+    digitalWrite(8, LOW);
+    digitalWrite(9, LOW);
+    digitalWrite(10, LOW);
+    digitalWrite(11, LOW);
+    digitalWrite(12, LOW);
+    digitalWrite(13, HIGH);
+
+    // Changing speed using PWM concept.
+    else if (text == "speed") {
+        Serial.println("CHANGE THE SPEED");
+        digitalWrite(8, HIGH);
+        digitalWrite(9, LOW);
+        digitalWrite(11, HIGH);
+        digitalWrite(12, LOW);
+
+        for (int i = 0; i < 256; i++) {
+            analogWrite(10, i);
+            analogWrite(13, i);
+            delay(20);
+        }
+
+        for (int i = 256; i > 0; i--) {
+            analogWrite(10, i);
+            analogWrite(13, i);
+            delay(20);
+        }
+    }
+
+    digitalWrite(8, HIGH);
+    digitalWrite(9, LOW);
+    digitalWrite(10, HIGH);
+    digitalWrite(11, HIGH);
+    digitalWrite(12, LOW);
+    digitalWrite(13, HIGH);
+
+    else if (text == "left") {
+        Serial.println("RIGHT");
+        digitalWrite(8, LOW);
+        digitalWrite(9, HIGH);
+        digitalWrite(10, HIGH);
+        digitalWrite(11, HIGH);
+        digitalWrite(12, LOW);
+        delay(1000);
+
+        digitalWrite(8, HIGH);
+        digitalWrite(9, LOW);
+        digitalWrite(10, HIGH);
+        digitalWrite(11, LOW);
+        digitalWrite(12, HIGH);
+    }
+
+    else if (text == "right") {
+        Serial.println("LEFT");
+        digitalWrite(8, HIGH);
+        digitalWrite(9, LOW);
+        digitalWrite(10, HIGH);
+        digitalWrite(11, LOW);
+        digitalWrite(12, HIGH);
+        delay(1000);
+
+        digitalWrite(8, HIGH);
+        digitalWrite(9, LOW);
+        digitalWrite(10, HIGH);
+        digitalWrite(11, HIGH);
+        digitalWrite(12, LOW);
+    }
+
+    else if (text == "forward") {
+        Serial.println("FORWARD");
+        digitalWrite(8, HIGH);
+        digitalWrite(9, LOW);
+        digitalWrite(10, HIGH);
+        digitalWrite(11, HIGH);
+        digitalWrite(12, LOW);
+        digitalWrite(13, HIGH);
+    }
+
+    else if (text == "backward") {
+        Serial.println("BACKWARD");
+        // Full speed backward
+        digitalWrite(8, LOW);
+        digitalWrite(9, HIGH);
+        digitalWrite(10, HIGH);
+        digitalWrite(11, LOW);
+        digitalWrite(12, HIGH);
+        digitalWrite(13, HIGH);
+    }
+
+    else if (text == "stop") {
+        Serial.println("STOP");
+        digitalWrite(8, LOW);
+        digitalWrite(9, LOW);
+    }
+
+    text = "";
+}
